@@ -582,13 +582,18 @@ class AbstractAnalysis(AbstractBaseAnalysis):
                 try:
                     # we need to quote a string result because of the `eval` below
                     result = '"%s"' % result if str_result else float(str(result))
+                    unc= dependency.getUncertainty()
                     key = dependency.getKeyword()
                     ldl = dependency.getLowerDetectionLimit()
                     udl = dependency.getUpperDetectionLimit()
                     bdl = dependency.isBelowLowerDetectionLimit()
                     adl = dependency.isAboveUpperDetectionLimit()
                     mapping[key] = result
+                    # Pass the key (i.e. NAME) so that other data can be
+                    # retrieved via the API. 
+                    mapping['%s.%s' % (key, 'NAME')] = '"%s"' % key
                     mapping['%s.%s' % (key, 'RESULT')] = result
+                    mapping['%s.%s' % (key, 'UNC')] = unc
                     mapping['%s.%s' % (key, 'LDL')] = api.to_float(ldl, 0.0)
                     mapping['%s.%s' % (key, 'UDL')] = api.to_float(udl, 0.0)
                     mapping['%s.%s' % (key, 'BELOWLDL')] = int(bdl)
@@ -600,7 +605,8 @@ class AbstractAnalysis(AbstractBaseAnalysis):
                 # https://docs.python.org/2.7/library/stdtypes.html?highlight=built#string-formatting-operations
                 converter = "s" if str_result else "f"
                 formula = formula.replace("[" + keyword + "]", "%(" + keyword + ")" + converter)
-
+                # "NAME" is always a string
+                formula = formula.replace("[" + keyword + ".NAME]", "%(" + keyword + ".NAME)" + "s")
 
         # convert any remaining placeholders, e.g. from interims etc.
         # NOTE: we assume remaining values are all floatable!
